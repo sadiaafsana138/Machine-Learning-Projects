@@ -1,110 +1,52 @@
-# 💊 Insurance Cost Prediction
+# 💊 Insurance Cost Prediction — Standardized ML Pipeline
 
-Predicting a person's **medical insurance charges** from their demographic and health details. This is an end-to-end supervised machine learning **regression** project built in a single Jupyter notebook — from data exploration to training and comparing multiple models, ending with a working prediction system.
+Predict medical insurance **charges** (regression) using a clean, leakage-free, 8-stage pipeline.
 
----
+## 🔁 Pipeline
 
-## 📌 Problem Statement
+| # | Stage | What happens |
+|---|-------|--------------|
+| 1 | Basic Analysis | shape, info, describe, missing-value check |
+| 2 | Train/Test Split | done **first** (80/20) — everything after is fit on train only |
+| 3 | EDA | training data only: histograms, countplots, correlation, charges-by-smoker |
+| 4 | Feature Engineering | `is_obese`, `high_risk_smoker` (applied to train & test) |
+| 5 | Encoding | one-hot for `sex`, `smoker`, `region` |
+| 6 | Outlier Handling | compares IQR vs Z-score vs Winsorization vs none → keeps best (train only) |
+| 7 | Scaling | compares Standard vs MinMax vs Robust → keeps best (judged with KNN) |
+| 8 | Models | Linear, Random Forest, Gradient Boosting, KNN → compared by R²/MAE/RMSE |
 
-Given a person's age, sex, BMI, number of children, smoking status, and region, predict their annual **insurance charges** (in USD).
-
-## 🔁 Workflow
-
-The notebook `Insurance_Cost_Prediction.ipynb` follows these steps:
-
-1. **Import dependencies** — NumPy, Pandas, Matplotlib, Seaborn, scikit-learn
-2. **Load the data** — read `insurance.csv` into a Pandas DataFrame
-3. **Explore the data** — inspect the first rows, shape `(1338, 7)`, data types, summary statistics, and confirm there are no missing values
-4. **Visual analysis** — distribution plots for age, BMI, and charges; count plots for sex, children, smoker, and region
-5. **One-hot encode** the categorical columns (`sex`, `smoker`, `region`) with `pd.get_dummies`
-6. **Split features & target** — drop `charges` to form `X`; use `charges` as `Y`
-7. **Train/test split** — 80% train / 20% test, `random_state=2`
-8. **Train & compare models** — Linear Regression, Random Forest, and Gradient Boosting, scored with R², MAE, and RMSE; the best-scoring model is selected automatically
-9. **Predictive system** — feed in one person's details (in plain words) and predict their insurance cost
+> **No leakage:** the split happens before any data-driven step. Encoding, outlier bounds, and the scaler are all fit on the training set only; the test set is transformed, never learned from. Outlier *removal* is train-only by design (you never drop test rows).
 
 ## 📊 Dataset
 
-The dataset (`insurance.csv`) contains **1,338 records** with 7 columns.
+`insurance.csv` — 1,338 records, 7 columns: `age`, `sex`, `bmi`, `children`, `smoker`, `region`, and the target `charges` (USD). No missing values. **Smoking** is the dominant cost driver.
 
-| Column | Description |
-|--------|-------------|
-| age | Age of the person |
-| sex | Gender (male / female) |
-| bmi | Body Mass Index (normal range ≈ 18.5–24.9) |
-| children | Number of children / dependents |
-| smoker | Whether the person smokes (yes / no) |
-| region | Residential area (northeast / northwest / southeast / southwest) |
-| charges | Annual medical insurance cost in USD (🎯 target) |
+## 🤖 Results (from last run)
 
-No missing values, so no cleaning is required.
+| Stage | Outcome |
+|-------|---------|
+| Best outlier method | **Z-score** |
+| Best scaler | **Standard** |
+| **Best model** | **Gradient Boosting** |
+| Test R² | **0.868** |
+| Test MAE | 2356.42 |
+| Test RMSE | 4447.86 |
 
-### Encoding
-
-Categorical columns are converted with **one-hot encoding** (`pd.get_dummies(..., drop_first=True)`) rather than mapping categories to numbers like 0/1/2/3. This avoids implying a false order (e.g. that one region is "greater" than another). After encoding, the features are:
-
-`age`, `bmi`, `children`, `sex_male`, `smoker_yes`, `region_northwest`, `region_southeast`, `region_southwest`
-
-> **Key insight:** **Smoking** is by far the strongest driver of insurance cost — a smoker's charges are dramatically higher, especially when combined with a high BMI.
-
-## 🤖 Models & Results
-
-Three models are trained on the same split and compared. Linear Regression is a baseline; the tree-based ensembles capture the non-linear interactions (like smoking × BMI) that linear models miss.
-
-| Model | Notes | Expected Test R² |
-|-------|-------|:----------------:|
-| Linear Regression | Linear baseline | ~0.74 |
-| Random Forest | 200 trees, non-linear | ~0.84–0.87 |
-| Gradient Boosting | Boosted trees (usually best here) | ~0.86–0.88 |
-
-The notebook automatically picks the highest-scoring model and uses it in the prediction system. Each model also reports **MAE** (average dollar error) and **RMSE** (penalizes large misses).
-
-> ℹ️ **Re-run for exact numbers:** the notebook was recently updated (one-hot encoding, extra models, added metrics). Run it top to bottom (**Run All**) to regenerate all the scores.
+(Full ranking: Gradient Boosting ≈ Linear Regression > KNN ≈ Random Forest.)
 
 ## 🛠️ Tech Stack
 
-`Python` · `Pandas` · `NumPy` · `Matplotlib` · `Seaborn` · `scikit-learn`
+`Python` · `pandas` · `numpy` · `matplotlib` · `seaborn` · `scikit-learn` · `scipy`
 
 ## 🚀 Getting Started
 
-```bash
-# Install dependencies
-pip install numpy pandas matplotlib seaborn scikit-learn
+Open `Insurance_Cost_Prediction.ipynb` in Google Colab (it mounts Google Drive for the CSV) or locally (update the path in the load cell to `insurance.csv`), then **Run All**.
 
-# Launch the notebook
-jupyter notebook Insurance_Cost_Prediction.ipynb
-```
-
-Make sure `insurance.csv` is in the same folder as the notebook, then run the cells from top to bottom.
-
-### Making a prediction
-
-The prediction system takes input in plain, human-readable form:
-
-```python
-input_dict = {
-    'age': 31,
-    'bmi': 25.74,
-    'children': 0,
-    'sex': 'male',
-    'smoker': 'yes',
-    'region': 'southwest',
-}
-```
-
-It is one-hot encoded and aligned to the training columns automatically, then passed to the best model.
-
-## 📁 Project Structure
+## 📁 Files
 
 ```
 Insurance Cost Prediction/
-├── Insurance_Cost_Prediction.ipynb   # Main notebook
-├── insurance.csv                     # Dataset
-└── README.md                         # This file
+├── Insurance_Cost_Prediction.ipynb
+├── insurance.csv
+└── README.md
 ```
-
-## 🔮 Possible Further Improvements
-
-- Tune hyperparameters (e.g. `GridSearchCV` on Gradient Boosting)
-- Log-transform the skewed `charges` target for the linear model
-- Inspect feature importances to confirm smoking/BMI dominate
-- Add cross-validation for a more robust score estimate

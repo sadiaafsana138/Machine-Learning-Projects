@@ -1,85 +1,48 @@
-# 🥇 Gold Price Prediction
+# 🥇 Gold Price Prediction — Standardized ML Pipeline
 
-Predicting the price of gold (the **GLD** gold ETF) from other daily financial indicators using a **Random Forest Regressor**. This is an end-to-end supervised machine learning regression project built in a single Jupyter notebook — from data exploration to model training and evaluation.
+Predict the gold ETF price **GLD** (regression) from other daily market indicators, using a clean, leakage-free, 8-stage pipeline.
 
----
+## 🔁 Pipeline
 
-## 📌 Problem Statement
+| # | Stage | What happens |
+|---|-------|--------------|
+| 1 | Basic Analysis | shape, info, describe, missing-value check |
+| 2 | Train/Test Split | done **first** (80/20) — everything after is fit on train only |
+| 3 | EDA | training data only: histograms, correlation heatmap |
+| 4 | Feature Engineering | drops the `Date` column (plain regression, not time series) |
+| 5 | Encoding | no categoricals → safe no-op (all inputs are numeric) |
+| 6 | Outlier Handling | compares IQR vs Z-score vs Winsorization vs none → keeps best (train only) |
+| 7 | Scaling | compares Standard vs MinMax vs Robust → keeps best (judged with KNN) |
+| 8 | Models | Linear, Random Forest, Gradient Boosting, KNN → compared by R²/MAE/RMSE |
 
-Given a set of same-day financial indicators (the S&P 500 index, oil price, silver price, and the EUR/USD exchange rate), predict the **gold ETF price (GLD)**.
-
-## 🔁 Workflow
-
-The notebook `Gold_Price_Prediction.ipynb` follows these steps:
-
-1. **Import dependencies** — NumPy, Pandas, Matplotlib, Seaborn, scikit-learn
-2. **Load the data** — read `gold_price_data.csv` into a Pandas DataFrame
-3. **Explore the data** — inspect the first/last rows, shape `(2290, 6)`, data types, summary statistics, and confirm there are no missing values
-4. **Correlation analysis** — plot a heatmap and check which features correlate with `GLD`
-5. **Distribution check** — plot the distribution of the `GLD` price
-6. **Split features & target** — drop `Date` and `GLD` to form `X`; use `GLD` as `Y`
-7. **Train/test split** — 80% train / 20% test, `random_state=2`
-8. **Train the model** — fit a `RandomForestRegressor` (100 trees)
-9. **Evaluate** — measure R², MAE, and RMSE on the test set, plus the training R² to check for overfitting
-10. **Visualize** — line plot comparing actual vs. predicted gold prices
+> **No leakage:** split first, then fit every data-driven step on the training set only.
 
 ## 📊 Dataset
 
-The dataset (`gold_price_data.csv`) contains **2,290 daily records** spanning 2008–2018, with 6 columns.
+`gold_price_data.csv` — daily rows (2008–2018). Columns: `Date`, `SPX` (S&P 500), `GLD` (🎯 target, gold ETF), `USO` (oil), `SLV` (silver), `EUR/USD`. Gold is most strongly correlated with **silver (SLV ≈ 0.87)**.
 
-| Column | Description |
-|--------|-------------|
-| Date | Trading date (dropped before training) |
-| SPX | S&P 500 stock market index |
-| GLD | Gold ETF price (🎯 target) |
-| USO | Oil price ETF |
-| SLV | Silver ETF price |
-| EUR/USD | Euro-to-US-Dollar exchange rate |
+## ⏱️ Two versions
 
-**Key insight:** `GLD` is most strongly correlated with **`SLV` (silver)**, with a correlation of about **0.87** — silver's price is the single biggest predictor of gold.
+- **This notebook** uses a normal random split — good for learning the standard pipeline.
+- A separate **time-series notebook** uses a chronological split (train on the past, test on the future) for a realistic forecasting estimate. Use that one if you care about predicting *future* gold prices.
 
-## 🤖 Model & Results
+## 🤖 Results
 
-**Model:** Random Forest Regressor (`n_estimators=100`, `random_state=2`)
-
-The Random Forest captures the non-linear relationships between the indicators and the gold price and achieves a very high **R² of ≈ 0.99** on the test set. The notebook also reports MAE and RMSE (in price units) and the training R² so you can confirm the model is not overfitting.
-
-| Metric | Description |
-|--------|-------------|
-| Test R² | ≈ 0.99 — proportion of price variance explained |
-| Test MAE | Average absolute prediction error (price units) |
-| Test RMSE | Error metric that penalizes larger misses |
-| Train R² | Training score, for an overfitting check |
-
-> ℹ️ **Re-run for exact numbers:** the evaluation cells were recently expanded (added MAE, RMSE, and the training-score check), so run the notebook top to bottom (**Run All**) to regenerate all the metrics.
+The notebook auto-selects the best outlier method, scaler, and model at runtime. **Run All** to generate the numbers.
 
 ## 🛠️ Tech Stack
 
-`Python` · `Pandas` · `NumPy` · `Matplotlib` · `Seaborn` · `scikit-learn`
+`Python` · `pandas` · `numpy` · `matplotlib` · `seaborn` · `scikit-learn` · `scipy`
 
 ## 🚀 Getting Started
 
-```bash
-# Install dependencies
-pip install numpy pandas matplotlib seaborn scikit-learn
+Open `Gold_Price_Prediction.ipynb` in Google Colab (it mounts Google Drive for the CSV) or locally (change the load-cell path to `gold_price_data.csv`), then **Run All**.
 
-# Launch the notebook
-jupyter notebook Gold_Price_Prediction.ipynb
-```
-
-Make sure `gold_price_data.csv` is in the same folder as the notebook, then run the cells from top to bottom.
-
-## 📁 Project Structure
+## 📁 Files
 
 ```
 Gold Price Prediction/
-├── Gold_Price_Prediction.ipynb   # Main notebook
-├── gold_price_data.csv           # Dataset
-└── README.md                     # This file
+├── Gold_Price_Prediction.ipynb
+├── gold_price_data.csv
+└── README.md
 ```
-
-## 🔮 Possible Further Improvements
-
-- Tune the Random Forest hyperparameters (e.g. `GridSearchCV`)
-- Try gradient-boosted models (XGBoost, LightGBM)
-- Inspect feature importances to see which indicators drive the prediction most
